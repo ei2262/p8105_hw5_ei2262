@@ -7,7 +7,7 @@ output: github_document
 library(tidyverse)
 ```
 
-#Problem 1
+# Problem 1
 
 ```{r}
 list.files(path="./data", pattern=NULL, all.files=FALSE,
@@ -15,23 +15,40 @@ list.files(path="./data", pattern=NULL, all.files=FALSE,
 ```
 
 
-#Problem 2
+# Problem 2
+
+### Raw Dataset
 
 ```{r}
 urlfile="https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv"
 
 post_homicide = read_csv(url(urlfile))
+```
+The raw dataset `post_homicide` includes `r ncol(post_homicide)` columns and `r nrow(post_homicide)` rows. The columns include reported date of homicide, location of the killing, whether an arrest was made or not, and basic demographics about each victim. Demographic information collected include the victims name, age, race, and sex. Information collected about the location of the killing include the city, state, and geographic coordinates (longitudinal and latitudinal coordinates).
 
-post_homicide %>% 
+#### Creating `city_state` variable and summarizing total number of homicides and unsolved homicides
+```{r}
+total_homicides = post_homicide %>% 
    mutate(
      city_state = paste(city, state, sep=", ")
    ) %>% 
   group_by(city_state) %>% 
+  summarize(
+        total_homicides = n(),
+  )
+
+unsolved_homicides = post_homicide %>% 
+  mutate(
+     city_state = paste(city, state, sep=", ")
+   ) %>% 
+  group_by(city_state) %>% 
   filter(disposition %in% c("Closed without arrest", "Open/No arrest")) %>% 
-  summarise(
-    total_homicides = n(),
-    unsolved_homicides = unique(disposition))
+  summarize(
+    unsolved_homicides = n()) %>% 
+  list()
 
-
+output = merge(total_homicides,unsolved_homicides,by=c("city_state"))
+knitr::kable(output, col.names = c("City, State", "Total Homicides", "Unsolved Homicides"))
 ```
 
+#### 
