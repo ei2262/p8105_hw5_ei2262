@@ -5,6 +5,7 @@ output: github_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(broom)
 ```
 
 # Problem 1
@@ -28,27 +29,50 @@ The raw dataset `post_homicide` includes `r ncol(post_homicide)` columns and `r 
 
 #### Creating `city_state` variable and summarizing total number of homicides and unsolved homicides
 ```{r}
+post_homicide =
+  post_homicide %>% 
+  mutate(city_state = paste(city, state, sep=", "))
+
 total_homicides = post_homicide %>% 
-   mutate(
-     city_state = paste(city, state, sep=", ")
-   ) %>% 
   group_by(city_state) %>% 
   summarize(
         total_homicides = n(),
   )
 
 unsolved_homicides = post_homicide %>% 
-  mutate(
-     city_state = paste(city, state, sep=", ")
-   ) %>% 
   group_by(city_state) %>% 
   filter(disposition %in% c("Closed without arrest", "Open/No arrest")) %>% 
   summarize(
-    unsolved_homicides = n()) %>% 
-  list()
+    unsolved_homicides = n())
 
 output = merge(total_homicides,unsolved_homicides,by=c("city_state"))
 knitr::kable(output, col.names = c("City, State", "Total Homicides", "Unsolved Homicides"))
 ```
 
-#### 
+#### `prop.test` of Baltimore,MD
+```{r}
+baltimore_post = 
+  prop.test(x=1825, n=2827, p = NULL, alternative = "two.sided", conf.level = 0.95, correct = TRUE) %>% 
+  tidy() %>% 
+  select(estimate, conf.low, conf.high)
+
+knitr::kable(baltimore_post, digits = 3)
+```
+
+#### `prop.test` for each city in the dataset
+```{r}
+output %>% 
+  mutate(
+    result = map2(output$unsolved_homicides, output$total_homicides, prop.test),
+    result = map(result, tidy),
+    result = map(result, ~select(.x, estimate, conf.low, conf.high))) %>% 
+  unnest(cols = c(result))
+```
+
+#### Plot that shows the estiamtes and CIs for each city
+```{r}
+output
+```
+
+
+
