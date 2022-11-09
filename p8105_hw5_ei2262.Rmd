@@ -61,7 +61,7 @@ knitr::kable(baltimore_post, digits = 3)
 
 #### `prop.test` for each city in the dataset
 ```{r}
-output %>% 
+each_city = output %>% 
   mutate(
     result = map2(output$unsolved_homicides, output$total_homicides, prop.test),
     result = map(result, tidy),
@@ -69,9 +69,18 @@ output %>%
   unnest(cols = c(result))
 ```
 
-#### Plot that shows the estiamtes and CIs for each city
+#### Plot that shows the estimates and CIs for each city
 ```{r}
-output
+each_city %>% 
+  mutate(city_state = fct_reorder(city_state, estimate)) %>% 
+  ggplot(aes(x = city_state, y = estimate, color = city_state)) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.4) +
+  theme(legend.position = "none", axis.text.x = element_text(angle = 90)) +
+  labs(
+    title = "Proportion of Unsolved Homicides in The U.S.",
+    x = "City, State",
+    y = "Estimated Proportions"
+  )
 ```
 
 
