@@ -36,8 +36,7 @@ post_homicide =
 total_homicides = post_homicide %>% 
   group_by(city_state) %>% 
   summarize(
-        total_homicides = n(),
-  )
+        total_homicides = n())
 
 unsolved_homicides = post_homicide %>% 
   group_by(city_state) %>% 
@@ -67,6 +66,8 @@ each_city = output %>%
     result = map(result, tidy),
     result = map(result, ~select(.x, estimate, conf.low, conf.high))) %>% 
   unnest(cols = c(result))
+
+knitr::kable(each_city, digits = 3)
 ```
 
 #### Plot that shows the estimates and CIs for each city
@@ -81,7 +82,74 @@ each_city %>%
     x = "City, State",
     y = "Estimated Proportions"
   )
+
 ```
 
+# Problem 3
 
+#### Generating 5000 datasets with fixed design elements (n=30, sigma = 5, mu = 0) and running `t.test`
+```{r}
+set.seed(1)
+
+new_datasets = map(1:5000, ~ rnorm(n = 30, mean = 0, sd = 5))
+
+ttest_datasets = 
+  map(new_datasets, t.test) %>% 
+  map(tidy) %>% 
+  map(~select(.x, estimate, p.value)) %>%
+  as.data.frame() %>%
+  pivot_longer(cols = everything(),
+               names_to = "parameter",
+               values_to = "values") 
+    
+ttest_datasets[2, "parameter"] <- "p.value.0"
+ttest_datasets[1, "parameter"] <- "estimate.0"
+
+ttest_datasets
+```
+
+#### Generating 5000 datasets with fixed design elements (n=30, sigma = 5) and multiple mu values
+
+```{r, eval = FALSE}
+set.seed(2)
+
+multi_datasets = 
+  tibble(mu = c(1,2,3,4,5,6)) %>% 
+  mutate(
+    output_lists = map(.x = mu, ~rerun(5000, rnorm(n=30, mean = .x, sd = 5)))) %>%
+  unnest(output_lists)
+
+multi_dataset = multi_datasets %>% 
+  pull(output_lists) %>% 
+  lapply(t.test) %>% 
+  map(tidy) %>%
+  map(~select(.x, estimate, p.value)) %>% 
+  as.data.frame() %>%
+  pivot_longer(cols = everything(),
+               names_to = "parameter",
+               values_to = "values") 
+multi_dataset[2, "parameter"] <- "p.value.0"
+multi_dataset[1, "parameter"] <- "estimate.0"
+
+multi_dataset["mu"] = rep(c(1,2,3,4,5,6),each=10000)
+
+```
+
+##### Plot 1: Proportion of times the null was rejected
+
+```{r}
+multi_plotone = multi_dataset %>% 
+  mutate(parameter = sub("\\..*[0-9999]", "", parameter),
+         parameter = recode(parameter, p = "p_value")) %>% 
+  filter(grepl("^p", parameter)) %>% 
+  filter(values > 0.05) %>% 
+  add_count(mu,parameter) %>% 
+  ggplot(aes(x = mu)) +
+  geom_bar() +
+  labs(title = "Proportion of times null was rejected vs. true value of mean",
+       x = "true mean", 
+       y = "proportion of times null was rejected")
+
+multi_plotone
+```
 
