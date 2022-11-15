@@ -194,6 +194,7 @@ multi_plotone = multi_dataset %>%
 
 multi_plotone
 ```
+
 The association between effect size and power is that the effect size is the difference between 
 the true value (in this case, true mean value) and the value specified in the null hypothesis (in this case, $\mu$ = 0). For this problem, we identified 5 different $\mu$ values, 1 to 6. Effect size affects power because the greater the difference between the true $\mu$ value and and value specified in the null hypothesis, the greater the power of the test. Simply put, a larger effect size yields greater power of the test. In our dataset, we would expect the proportion of times the null was rejected to increase as we increase in our $\mu$ value because the effect size becomes larger. Therefore, $\mu$=6 is expected to have the largest power, which is seen in the Figure 1. 
 
@@ -240,4 +241,5 @@ overlay_plot = ggplot(multi_plottwo, aes(x=mu, y = mean_mu)) +
   
 overlay_plot
 ```
+
 The sample average of $\hat{\mu}$ across tests for which the null is rejected (*p-value ≤ 0.05*) is not approximately equal to the true value of $\mu$. In Figure 2, the black line represents the plot showing the average estimate of $\hat{\mu}$ vs. the true value of $\mu$. The red line represents the plot showing the average estimate of $\hat{\mu}$ **only** in samples for which the null was rejected . Figure 2 shows two lines that are not identical to one another. We can conclude that the two average estimates of $\hat{\mu}$ are not equivalent. One explanation may be that the sample average of $\hat{\mu}$ **only** in samples for which the null was rejected is larger to increase the effect size and ultimately reject the null hypothesis. The dataset that was restricted to p-values ≤ 0.05 and only values that have a larger mean estimate was left, which was then used to calculate the average estimate of $\hat{\mu}$. That is why the average estimate is much larger than the true value of $\mu$.
